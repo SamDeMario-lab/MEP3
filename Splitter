@@ -1,0 +1,112 @@
+#!/usr/bin/env python
+# This code takes imput of a bed annotation file and two distances upstream and downstream and outputs four bed files extended with the upstream and downstream distances with the newly annotated upstream regions, and annotated downstream region, and an annotated upstream and downstream region
+
+import sys
+
+input_bed = sys.argv[1]
+output_dir = sys.argv[2]
+up_stream = sys.argv[3]
+down_stream = sys.argv[4]
+
+#Altering the name of the input file
+output_extend = (input_bed.replace('.bed','') + "_extended.bed").rsplit('/',1)[-1]
+output_down = (input_bed.replace('.bed','') + "_DS_" + str(down_stream) + ".bed").rsplit('/',1)[-1]
+output_up = (input_bed.replace('.bed','') + "_US_" + str(up_stream) + ".bed").rsplit('/',1)[-1]
+output_flank = (input_bed.replace('.bed','') + "_flanking_" + str(down_stream) + "_" + str(up_stream) + ".bed").rsplit('/',1)[-1]
+
+#The tRNA site extended both upstream and downstream
+with open(output_extend, 'w') as out, open(input_bed) as fh_in:
+    for i in fh_in:
+        i = i.split("\t")
+        #print(i)
+        if i[5] == "+":
+            col2 = int(i[2])+int(down_stream)
+            col7 = int(i[7])+int(down_stream)
+            col1 = int(i[1])-int(up_stream)
+            col6 = int(i[6])-int(up_stream)
+            col1 = str(col1)
+            col6 = str(col6)
+            col2 = str(col2)
+            col7 = str(col7)
+            value = i[0] + "\t" + col1 + "\t" + col2 + "\t" + i[3] + "\t" + i[4] + "\t" + i[5] + "\t" + col6 + "\t" + col7 + "\t" + i[8] + "\n"
+            out.write(value)
+            #print(out)
+        elif i[5] == "-":
+            col1 = int(i[1])-int(down_stream)
+            col6 = int(i[6])-int(down_stream)
+            col2 = int(i[2])+int(up_stream)
+            col7 = int(i[7])+int(up_stream)
+            col2 = str(col2)
+            col7 = str(col7)
+            col1 = str(col1)
+            col6 = str(col6)
+            value = i[0] + "\t" + col1 + "\t" + col2 + "\t" + i[3] + "\t" + i[4] + "\t" + i[5] + "\t" + col6 + "\t" + col7 + "\t" + i[8] + "\n"
+            out.write(value)
+            #print(out)
+
+#This is the region that produces the upstream extension
+with open(output_up, 'w') as out, open(input_bed) as fh_in:
+    for i in fh_in:
+        i = i.split("\t")
+        #print(i)
+        if i[5] == "+":
+            col2 = i[1]
+            col7 = i[6]
+            col1 = int(i[1])-int(up_stream)
+            col1 = str(col1)
+            col6 = int(i[6])-int(up_stream)
+            col6 = str(col6)
+            col3 = ''.join((i[3],"-US_",str(up_stream)))
+            value = i[0] + "\t" + col1 + "\t" + col2 + "\t" + col3 + "\t" + i[4] + "\t" + i[5] + "\t" + col6 + "\t" + col7 + "\t" + i[8] + "\n"
+            out.write(value)
+            #print(out)
+        elif i[5] == "-":
+            col1 = i[2]
+            col6 = i[7]
+            col2 = int(i[2])+int(up_stream)
+            col2 = str(col2)
+            col7 = int(i[7])+int(up_stream)
+            col7 = str(col7)
+            col3 = ''.join((i[3],"-US_",str(up_stream)))
+            value = i[0] + "\t" + col1 + "\t" + col2 + "\t" + col3 + "\t" + i[4] + "\t" + i[5] + "\t" + col6 + "\t" + col7 + "\t" + i[8] + "\n"
+            out.write(value)
+            #print(out)
+
+
+#This is the region that produces the downstream extension
+#Minus strand: Downstream is smaller number, upstream is bigger number
+with open(output_down, 'w') as out, open(input_bed) as fh_in:
+    for i in fh_in:
+        i = i.split("\t")
+        #print(i)
+        if i[5] == "+":
+            col1 = i[2]
+            col6 = i[7]
+            col2 = int(i[2])+int(down_stream)
+            col2 = str(col2)
+            col7 = int(i[7])+int(down_stream)
+            col7 = str(col7)
+            col3 = ''.join((i[3],"-DS_",str(down_stream)))
+            value = i[0] + "\t" + col1 + "\t" + col2 + "\t" + col3 + "\t" + i[4] + "\t" + i[5] + "\t" + col6 + "\t" + col7 + "\t" + i[8] + "\n"
+            out.write(value)
+            #print(out)
+        elif i[5] == "-":
+            col2 = i[1]
+            col7 = i[6]
+            col1 = int(i[1])-int(down_stream)
+            col1 = str(col1)
+            col6 = int(i[6])-int(down_stream)
+            col6 = str(col6)
+            col3 = ''.join((i[3],"-DS_",str(down_stream)))
+            value = i[0] + "\t" + col1 + "\t" + col2 + "\t" + col3 + "\t" + i[4] + "\t" + i[5] + "\t" + col6 + "\t" + col7 + "\t" + i[8] + "\n"
+            out.write(value)
+            #print(out)
+
+#The tRNA site will have regions flanking both the upstream and downstrem ends of the tRNA
+with open("./sacCer3-tRNAs_US_100.bed") as up:
+    up = up.read()
+with open("./sacCer3-tRNAs_DS_100.bed") as down:
+    down = down.read()
+with open(output_flank, 'w') as out:
+            flank = str(up) + str(down)
+            out.write(flank)
